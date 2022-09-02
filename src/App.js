@@ -1,24 +1,42 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect } from 'react';
+import Routes from './routes/Routes';
+import { auth, createUserProfileDocument } from './firebase/firebase-utils';
+import { onAuthStateChanged } from 'firebase/auth';
+import { onSnapshot } from 'firebase/firestore';
+import { useDispatch } from 'react-redux';
+import * as userActions from './Redux/user/user-actions';
+import Layout from './components/Layout/Layout';
+import Navbar from './components/Navbar/Navbar';
+import Footer from './components/Footer/Footer';
+
+function onAuthStateChange(cb, action) {
+  onAuthStateChanged(auth, async userAuth => {
+    if (userAuth) {
+      const userRef = await createUserProfileDocument(userAuth);
+
+      onSnapshot(userRef, snapShot =>
+        cb(action({ id: snapShot.id, ...snapShot.data() }))
+      );
+    } else {
+      cb(action(null));
+    }
+  });
+}
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(
+    () => onAuthStateChange(dispatch, userActions.setCurrentUser),
+    [dispatch]
+  );
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Layout>
+      <Navbar />
+      <Routes />
+      <Footer />
+    </Layout>
   );
 }
 
